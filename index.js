@@ -19,13 +19,18 @@ var SidxInterface = (() => {
 
     function start(options) {
         options = options || {};
-        options.audioonly = options.audioonly || false;
-        options.videoonly = options.videoonly || true;
+
         if(options.audioonly && options.videoonly){
           options.videoonly = true;
           options.audioonly = false;
         }
+
+        options.audioonly = options.audioonly || false;
         options.videoonly = !options.audioonly;
+
+        options.chooseBest = options.chooseBest || false;
+
+
         var id = options.id;
         if (!id) {
             throw new Error('specify id in args: --id ');
@@ -73,7 +78,9 @@ var SidxInterface = (() => {
             }
             return rep.type.match(re) && valid;
         });
-        console.log(choices);
+        if(options.chooseBest){
+          choices = choices.splice(0,1);
+        }
         return Q.map(choices, (choice) => {
             return getSidx(choice);
         });
@@ -100,6 +107,7 @@ var SidxInterface = (() => {
                         reject('Failed on SIDX parse');
                     } else {
                         resolve({
+                            info: choice,
                             codecs: codecs,
                             indexRange: indexRange,
                             url: choice.url,
