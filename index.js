@@ -1,9 +1,11 @@
 var Q = require('bluebird');
+var fs = require('fs');
+var path = require('path');
 var YT = require('ytdl-core');
 var xml2js = require('xml2js');
+var XMLHttpRequest = require('xhr2');
 
 var SIDX = require('./lib/sidx');
-
 //mp4 and m4a dash codes
 var DASH_VIDEO_TAGS = ['136', '135', '134', '133'];
 var DASH_AUDIO_TAGS = ['139', '140', '141'];
@@ -16,8 +18,14 @@ var SidxInterface = (() => {
     var parser = new xml2js.Parser();
 
     function start(options) {
+        options = options || {};
         options.audioonly = options.audioonly || false;
         options.videoonly = options.videoonly || true;
+        if(options.audioonly && options.videoonly){
+          options.videoonly = true;
+          options.audioonly = false;
+        }
+        options.videoonly = !options.audioonly;
         var id = options.id;
         if (!id) {
             throw new Error('specify id in args: --id ');
@@ -65,6 +73,7 @@ var SidxInterface = (() => {
             }
             return rep.type.match(re) && valid;
         });
+        console.log(choices);
         return Q.map(choices, (choice) => {
             return getSidx(choice);
         });
