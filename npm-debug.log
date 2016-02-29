@@ -1,0 +1,105 @@
+0 info it worked if it ends with ok
+1 verbose cli [ '/usr/local/Cellar/node/5.5.0/bin/node',
+1 verbose cli   '/usr/local/bin/npm',
+1 verbose cli   'publish' ]
+2 info using npm@3.5.3
+3 info using node@v5.5.0
+4 verbose publish [ '.' ]
+5 silly cache add args [ '.', null ]
+6 verbose cache add spec .
+7 silly cache add parsed spec Result {
+7 silly cache add   raw: '.',
+7 silly cache add   scope: null,
+7 silly cache add   name: null,
+7 silly cache add   rawSpec: '.',
+7 silly cache add   spec: '/Users/samelie/Documents/rad/youtube-dash-sidx',
+7 silly cache add   type: 'directory' }
+8 verbose addLocalDirectory /Users/samelie/.npm/node-youtube-dash-sidx/0.1.0/package.tgz not in flight; packing
+9 info lifecycle node-youtube-dash-sidx@0.1.0~prepublish: node-youtube-dash-sidx@0.1.0
+10 silly lifecycle node-youtube-dash-sidx@0.1.0~prepublish: no script for prepublish, continuing
+11 verbose tar pack [ '/Users/samelie/.npm/node-youtube-dash-sidx/0.1.0/package.tgz',
+11 verbose tar pack   '/Users/samelie/Documents/rad/youtube-dash-sidx' ]
+12 verbose tarball /Users/samelie/.npm/node-youtube-dash-sidx/0.1.0/package.tgz
+13 verbose folder /Users/samelie/Documents/rad/youtube-dash-sidx
+14 verbose addLocalTarball adding from inside cache /Users/samelie/.npm/node-youtube-dash-sidx/0.1.0/package.tgz
+15 silly cache afterAdd node-youtube-dash-sidx@0.1.0
+16 verbose afterAdd /Users/samelie/.npm/node-youtube-dash-sidx/0.1.0/package/package.json not in flight; writing
+17 verbose afterAdd /Users/samelie/.npm/node-youtube-dash-sidx/0.1.0/package/package.json written
+18 silly publish { name: 'node-youtube-dash-sidx',
+18 silly publish   description: 'Retreive the sidx of a youtube video from the id.',
+18 silly publish   homepage: 'https://github.com/samelie/node-youtube-dash-sidx/',
+18 silly publish   author: { name: 'Sam Elie', email: 'samradelie@gmail.com' },
+18 silly publish   version: '0.1.0',
+18 silly publish   repository:
+18 silly publish    { type: 'git',
+18 silly publish      url: 'git+https://github.com/samelie/node-youtube-dash-sidx.git',
+18 silly publish      web: 'https://github.com/samelie/node-youtube-dash-sidx/' },
+18 silly publish   main: 'index.js',
+18 silly publish   dependencies:
+18 silly publish    { bluebird: '^3.2.1',
+18 silly publish      'ytdl-core': '^0.7.9',
+18 silly publish      xhr2: '0.1.3',
+18 silly publish      xml2js: '0.4.13' },
+18 silly publish   keywords: [ 'youtube', 'dash', 'sidx', 'mpd' ],
+18 silly publish   bugs: { url: 'https://github.com/samelie/node-youtube-dash-sidx/issues' },
+18 silly publish   engines: { node: '>=5.0.0' },
+18 silly publish   licenses:
+18 silly publish    [ { type: 'MIT',
+18 silly publish        url: 'https://github.com/samelie/node-youtube-dash-sidx/raw/master/LICENSE' } ],
+18 silly publish   readme: '# youtube-dash-sidx\nGet the The Segment Index box (sidx) of a youtube video in json.\nThe application would be if you wanted to use this with a video mediasource by requesting indivdual byteRange references from the SIDX and appending the buffer to the source.\n\n[media source](https://developer.mozilla.org/en-US/docs/Web/API/MediaSource)\n\n[dash tutorial](https://msdn.microsoft.com/en-us/library/dn551368(v=vs.85).aspx)\n\nIt is promised with bluebird.\n',
+18 silly publish   readmeFilename: 'README.md',
+18 silly publish   gitHead: '42c37613b3594026e80cb705041527a92a4570cd',
+18 silly publish   _id: 'node-youtube-dash-sidx@0.1.0',
+18 silly publish   scripts: {},
+18 silly publish   _shasum: '2cc99319391ef7f9a5c288a1114289570ed44382',
+18 silly publish   _from: '.' }
+19 verbose getPublishConfig undefined
+20 silly mapToRegistry name node-youtube-dash-sidx
+21 silly mapToRegistry using default registry
+22 silly mapToRegistry registry https://registry.npmjs.org/
+23 silly mapToRegistry uri https://registry.npmjs.org/node-youtube-dash-sidx
+24 verbose publish registryBase https://registry.npmjs.org/
+25 silly publish uploading /Users/samelie/.npm/node-youtube-dash-sidx/0.1.0/package.tgz
+26 verbose request uri https://registry.npmjs.org/node-youtube-dash-sidx
+27 verbose request sending authorization for write operation
+28 info attempt registry request try #1 at 4:37:41 PM
+29 verbose request using bearer token for auth
+30 verbose request id b922edcbb71f6735
+31 http request PUT https://registry.npmjs.org/node-youtube-dash-sidx
+32 http 403 https://registry.npmjs.org/node-youtube-dash-sidx
+33 verbose headers { 'content-type': 'application/json',
+33 verbose headers   'cache-control': 'max-age=300',
+33 verbose headers   'content-length': '95',
+33 verbose headers   'accept-ranges': 'bytes',
+33 verbose headers   date: 'Mon, 29 Feb 2016 16:37:42 GMT',
+33 verbose headers   via: '1.1 varnish',
+33 verbose headers   connection: 'keep-alive',
+33 verbose headers   'x-served-by': 'cache-lcy1134-LCY',
+33 verbose headers   'x-cache': 'MISS',
+33 verbose headers   'x-cache-hits': '0',
+33 verbose headers   'x-timer': 'S1456763861.511246,VS0,VE958' }
+34 verbose request invalidating /Users/samelie/.npm/registry.npmjs.org/node-youtube-dash-sidx on PUT
+35 error publish Failed PUT 403
+36 verbose stack Error: "You cannot publish over the previously published version 0.1.0." : node-youtube-dash-sidx
+36 verbose stack     at makeError (/usr/local/lib/node_modules/npm/node_modules/npm-registry-client/lib/request.js:264:12)
+36 verbose stack     at CachingRegistryClient.<anonymous> (/usr/local/lib/node_modules/npm/node_modules/npm-registry-client/lib/request.js:252:14)
+36 verbose stack     at Request._callback (/usr/local/lib/node_modules/npm/node_modules/npm-registry-client/lib/request.js:172:14)
+36 verbose stack     at Request.self.callback (/usr/local/lib/node_modules/npm/node_modules/request/request.js:198:22)
+36 verbose stack     at emitTwo (events.js:100:13)
+36 verbose stack     at Request.emit (events.js:185:7)
+36 verbose stack     at Request.<anonymous> (/usr/local/lib/node_modules/npm/node_modules/request/request.js:1035:10)
+36 verbose stack     at emitOne (events.js:95:20)
+36 verbose stack     at Request.emit (events.js:182:7)
+36 verbose stack     at IncomingMessage.<anonymous> (/usr/local/lib/node_modules/npm/node_modules/request/request.js:962:12)
+37 verbose statusCode 403
+38 verbose pkgid node-youtube-dash-sidx
+39 verbose cwd /Users/samelie/Documents/rad/youtube-dash-sidx
+40 error Darwin 14.1.0
+41 error argv "/usr/local/Cellar/node/5.5.0/bin/node" "/usr/local/bin/npm" "publish"
+42 error node v5.5.0
+43 error npm  v3.5.3
+44 error code E403
+45 error "You cannot publish over the previously published version 0.1.0." : node-youtube-dash-sidx
+46 error If you need help, you may report this error at:
+46 error     <https://github.com/npm/npm/issues>
+47 verbose exit [ 1, true ]
