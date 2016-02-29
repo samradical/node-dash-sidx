@@ -30,7 +30,8 @@ var SidxInterface = (() => {
         if (options.resolution) {
             var startRes = DASH_VIDEO_RESOLUTIONS.indexOf(options.resolution);
             if (startRes >= 0) {
-                options.dashVideoResolutions = [].concat(DASH_VIDEO_RESOLUTIONS.splice(startRes, DASH_VIDEO_RESOLUTIONS.length));
+                var clone = [].concat(DASH_VIDEO_RESOLUTIONS);
+                options.dashVideoResolutions = clone.splice(startRes, DASH_VIDEO_RESOLUTIONS.length);
             }
         }
 

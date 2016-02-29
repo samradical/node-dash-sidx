@@ -2,11 +2,10 @@ var fs = require('fs');
 var path = require('path');
 var Interface = require('./index');
 
-var ID = '0uXssTfeHZM';
+var ID = '_QljnNIBtaI';
 
 var options = {
     id:ID,
-    audioonly:true,
     chooseBest:true,
     resolution:'480p'
 };
