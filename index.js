@@ -7,6 +7,9 @@ var XMLHttpRequest = require('xhr2');
 
 var SIDX = require('./lib/sidx');
 //mp4 and m4a dash codes
+
+//720p, 480p, 360p
+var DASH_VIDEO_RESOLUTIONS = ['720p', '480p', '360p', '240p'];
 var DASH_VIDEO_TAGS = ['136', '135', '134', '133'];
 var DASH_AUDIO_TAGS = ['139', '140', '141'];
 var VIDEO_PATH = '/watch?v=';
@@ -20,16 +23,26 @@ var SidxInterface = (() => {
     function start(options) {
         options = options || {};
 
-        if(options.audioonly && options.videoonly){
-          options.videoonly = true;
-          options.audioonly = false;
+        if(options.audioonly){
+            delete options.resolution;
+        }
+
+        if (options.resolution) {
+            var startRes = DASH_VIDEO_RESOLUTIONS.indexOf(options.resolution);
+            if (startRes >= 0) {
+                options.dashVideoResolutions = [].concat(DASH_VIDEO_RESOLUTIONS.splice(startRes, DASH_VIDEO_RESOLUTIONS.length));
+            }
+        }
+
+        if (options.audioonly && options.videoonly) {
+            options.videoonly = true;
+            options.audioonly = false;
         }
 
         options.audioonly = options.audioonly || false;
         options.videoonly = !options.audioonly;
 
         options.chooseBest = options.chooseBest || false;
-
 
         var id = options.id;
         if (!id) {
@@ -58,7 +71,11 @@ var SidxInterface = (() => {
         var choices = formats.filter(function(rep) {
             var re = new RegExp(mimetpye);
             var valid = true;
-            if (options.itag) {
+            if (options.resolution) {
+                if (options.dashVideoResolutions.indexOf(rep.resolution) < 0 || !rep.index) {
+                    valid = false;
+                }
+            } else if (options.itag) {
                 if (rep.itag !== options.itag) {
                     valid = false;
                 }
@@ -78,8 +95,8 @@ var SidxInterface = (() => {
             }
             return rep.type.match(re) && valid;
         });
-        if(options.chooseBest){
-          choices = choices.splice(0,1);
+        if (options.chooseBest) {
+            choices = choices.splice(0, 1);
         }
         return Q.map(choices, (choice) => {
             return getSidx(choice);

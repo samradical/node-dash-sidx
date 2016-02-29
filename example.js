@@ -7,8 +7,8 @@ var ID = '0uXssTfeHZM';
 var options = {
     id:ID,
     audioonly:true,
-    videoonly:false,
-    chooseBest:true
+    chooseBest:true,
+    resolution:'480p'
 };
 
 Interface.start(options).then(results => {
