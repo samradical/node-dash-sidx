@@ -1,8 +1,8 @@
 var Q = require('bluebird');
-var fs = require('fs');
-var path = require('path');
 var YT = require('ytdl-core');
 var xml2js = require('xml2js');
+
+var SIDX = require('./lib/sidx');
 
 //mp4 and m4a dash codes
 var DASH_VIDEO_TAGS = ['136', '135', '134', '133'];
@@ -79,7 +79,6 @@ var SidxInterface = (() => {
         var codecs = cdex.substring(0, cdex.length - 1);
         var indexRange = "0-" + choice.index.split('-')[1];
         return new Q(function(resolve, reject) {
-            var XMLHttpRequest = require('xhr2');
             var xhr = new XMLHttpRequest();
             xhr.open('GET', url);
             xhr.setRequestHeader("Range", "bytes=" + indexRange);
@@ -87,7 +86,7 @@ var SidxInterface = (() => {
             xhr.addEventListener("readystatechange", function() {
                 if (xhr.readyState == xhr.DONE) { // wait for video to load
                     // Add response to buffer
-                    var p = require('./sidx').parseSidx(xhr.response);
+                    var p = SIDX.parseSidx(xhr.response);
                     if (!p) {
                         reject('Failed on SIDX parse');
                     } else {
