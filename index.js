@@ -12,8 +12,8 @@ var SIDX = require('./lib/sidx');
 //mp4 and m4a dash codes
 
 //720p, 480p, 360p
-var DASH_VIDEO_RESOLUTIONS = ['720p', '480p', '360p', '240p'];
-var DASH_VIDEO_TAGS = ['136', '135', '134', '133'];
+var DASH_VIDEO_RESOLUTIONS = ['720p', '480p', '360p'];
+var DASH_VIDEO_TAGS = ['136', '135', '134'];
 var DASH_AUDIO_TAGS = ['139', '140', '141'];
 var VIDEO_PATH = '/watch?v=';
 var VIDEO_BASE = 'https://www.youtube.com' + VIDEO_PATH;
@@ -138,6 +138,8 @@ var SidxInterface = (() => {
                 url: undefined,
                 sidx: undefined
             }
+
+            var iTags = options.videoonly ? DASH_VIDEO_TAGS : DASH_AUDIO_TAGS
             manifests.forEach(function(p) {
                 var xml = fs.readFileSync(p, 'utf-8')
                 parser.parseString(xml, function(err, result) {
@@ -145,17 +147,21 @@ var SidxInterface = (() => {
                     var byMime = adpatation.filter(set => {
                         return set.$.mimeType === mimetpye
                     })[0]
-                    var rep = byMime.Representation[0].$
-                    Out.url = byMime.Representation[0].BaseURL[0]
-                    Out.codecs = rep.codecs
-                    var segmentList = byMime.Representation[0].SegmentList
-                    var _i = segmentList[0].SegmentURL[0].$.media.replace('range/', '').split('-')[0]
-                    var _iParsed = parseInt(_i, 10) - 1
-                    var indexRange = `0-${_iParsed}`
-                    Out.indexRange = indexRange
-                    sh.cd(__dirname)
-                    sh.exec(`rm -rf ${_downloadDir}`)
-                    resolve(getSidx(Out))
+                    byMime.Representation.forEach(rep=>{
+                        var repVars = rep.$
+                        if(iTags.indexOf(repVars.id) > -1 && !Out.url){
+                            Out.url = rep.BaseURL[0]
+                            Out.codecs = repVars.codecs
+                            var segmentList = rep.SegmentList
+                            var _i = segmentList[0].SegmentURL[0].$.media.replace('range/', '').split('-')[0]
+                            var _iParsed = parseInt(_i, 10) - 1
+                            var indexRange = `0-${_iParsed}`
+                            Out.indexRange = indexRange
+                            sh.cd(__dirname)
+                            sh.exec(`rm -rf ${_downloadDir}`)
+                            resolve(getSidx(Out))
+                        }
+                    })
                 });
             })
         });
