@@ -2,11 +2,22 @@ var fs = require('fs');
 var path = require('path');
 var Interface = require('./index');
 
-var ID = 'aa1BS-BbXpI';
+var ID = 'Z8Vq4vgF8aA';
+
+/*
+All OPTIONS
+    id:ID,
+    audioOnly:false,
+    videoOnly:true,
+    resolution: //'720p', '480p', '360p'
+    chooseBest:true,
+    youtubeDl:false // to leverage youtube-dl
+*/
+
 
 var options = {
     id:ID,
-    audioonly:true,
+    audioOnly:false,
 };
 
 Interface.start(options).then(results => {

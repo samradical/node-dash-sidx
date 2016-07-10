@@ -13,7 +13,7 @@ var SIDX = require('./lib/sidx');
 
 //720p, 480p, 360p
 var DASH_VIDEO_RESOLUTIONS = ['720p', '480p', '360p'];
-var DASH_VIDEO_TAGS = ['136', '135', '134'];
+var DASH_VIDEO_TAGS = ['136', '135', '134', '133'];
 var DASH_AUDIO_TAGS = ['139', '140', '141'];
 var VIDEO_PATH = '/watch?v=';
 var VIDEO_BASE = 'https://www.youtube.com' + VIDEO_PATH;
@@ -25,7 +25,7 @@ var SidxInterface = (() => {
     function start(options) {
         options = options || {};
 
-        if (options.audioonly) {
+        if (options.audioOnly) {
             delete options.resolution;
         }
 
@@ -37,13 +37,13 @@ var SidxInterface = (() => {
             }
         }
 
-        if (options.audioonly && options.videoonly) {
-            options.videoonly = true;
-            options.audioonly = false;
+        if (options.audioOnly && options.videoOnly) {
+            options.videoOnly = true;
+            options.audioOnly = false;
         }
 
-        options.audioonly = options.audioonly || false;
-        options.videoonly = !options.audioonly;
+        options.audioOnly = options.audioOnly || false;
+        options.videoOnly = !options.audioOnly;
 
         options.chooseBest = options.chooseBest || false;
 
@@ -62,11 +62,7 @@ var SidxInterface = (() => {
                 }
                 chooseMediaFormat(info.formats, options)
                     .then(function(data) {
-                        if (!data.length) {
-                            resolve(tryYoutubeDl(url, id, options))
-                        } else {
-                            resolve(data);
-                        }
+                        resolve(data);
                     }).catch(function(err) {
                         reject();
                     });
@@ -88,32 +84,51 @@ var SidxInterface = (() => {
                     valid = false;
                 }
             } else {
-                if (options.videoonly) {
-                    if (DASH_VIDEO_TAGS.indexOf(rep.itag) < 0 || !rep.index) {
+                if (options.videoOnly) {
+                    if (DASH_VIDEO_TAGS.indexOf(rep.itag) < 0) {
                         valid = false;
                     }
-                } else if (!options.audioonly) {
-                    if (DASH_AUDIO_TAGS.indexOf(rep.itag) < 0 || !rep.index) {
+                } else if (options.audioOnly) {
+                    if (DASH_AUDIO_TAGS.indexOf(rep.itag) < 0) {
                         valid = false;
                     }
                 }
             }
-            if (!rep.type) {
-                return false;
+            return valid;
+        });
+
+        var filteredCorrectly = choices.filter(choice => {
+            return choice.index
+        })
+        return new Q(function(resolve, reject) {
+            if (filteredCorrectly.length) {
+                if (options.chooseBest) {
+                    choices = choices.splice(0, 1);
+                }
+                //resolve(tryYoutubeDl(choices[0], options))
+                    resolve(Q.map(choices, (choice) => {
+                        _prepareData(choice)
+                        return getSidx(choice);
+                    }));
+            } else if(options.youtubeDl) {
+                resolve(tryYoutubeDl(choices[0], options))
+            }else{
+                resolve()
             }
-            return rep.type.match(re) && valid;
-        });
-        if (options.chooseBest) {
-            choices = choices.splice(0, 1);
-        }
-        return Q.map(choices, (choice) => {
-            _prepareData(choice)
-            return getSidx(choice);
-        });
+        })
     }
 
 
-    function tryYoutubeDl(videoUrl, id, options) {
+    function tryYoutubeDl(object, options) {
+        var id = options.id
+        var videoUrl = VIDEO_BASE + id;
+        var Out = {
+            info: object,
+            codecs: undefined,
+            indexRange: undefined,
+            url: object.url,
+            sidx: undefined
+        }
         return new Q(function(resolve, reject) {
             var _downloadDir = path.join(__dirname, id)
             var mimetpye = _getMimeType(options)
@@ -131,15 +146,7 @@ var SidxInterface = (() => {
             var manifests = filesArray.filter(function(p) {
                 return p.indexOf('manifest') > -1
             })
-            var Out = {
-                info: undefined,
-                codecs: undefined,
-                indexRange: undefined,
-                url: undefined,
-                sidx: undefined
-            }
-
-            var iTags = options.videoonly ? DASH_VIDEO_TAGS : DASH_AUDIO_TAGS
+            var iTags = options.videoOnly ? DASH_VIDEO_TAGS : DASH_AUDIO_TAGS
             manifests.forEach(function(p) {
                 var xml = fs.readFileSync(p, 'utf-8')
                 parser.parseString(xml, function(err, result) {
@@ -147,18 +154,43 @@ var SidxInterface = (() => {
                     var byMime = adpatation.filter(set => {
                         return set.$.mimeType === mimetpye
                     })[0]
-                    byMime.Representation.forEach(rep=>{
+
+                    let _reps = byMime.Representation.filter(rep=>{
+                        var _r = false
                         var repVars = rep.$
-                        if(iTags.indexOf(repVars.id) > -1 && !Out.url){
+                        if (iTags.indexOf(repVars.id) > -1){
+                            var segmentList = rep.SegmentList
+                            if(segmentList[0].SegmentURL[0].$.media.indexOf('range') > -1){
+                                _r = true
+                            }
+                        }
+                        return _r
+                    })
+
+                    _reps.forEach(rep => {
+                        var repVars = rep.$
+                        if (iTags.indexOf(repVars.id) > -1 && !Out.codecs) {
+                            delete Out.info
                             Out.url = rep.BaseURL[0]
                             Out.codecs = repVars.codecs
-                            var segmentList = rep.SegmentList
-                            var _i = segmentList[0].SegmentURL[0].$.media.replace('range/', '').split('-')[0]
-                            var _iParsed = parseInt(_i, 10) - 1
-                            var indexRange = `0-${_iParsed}`
+                            var segmentList = rep.SegmentList || rep.SegmentBase
+                            var indexRange
+                            if (segmentList[0].$) {
+                                let _ii = segmentList[0].$.indexRange.split('-')[1]
+                                indexRange = `0-${_ii}`
+                            } else{
+                                var _i = segmentList[0].SegmentURL[0].$.media.replace('range/', '').split('-')[0]
+                                var _iParsed = parseInt(_i, 10) - 1
+                                indexRange = `0-${_iParsed}`
+                            }
+                            /*console.log("===================================");
+                            console.log(Out);
+                            console.log("===================================");*/
                             Out.indexRange = indexRange
+
+                            console.log(Out);
                             sh.cd(__dirname)
-                            sh.exec(`rm -rf ${_downloadDir}`)
+                            //sh.exec(`rm -rf ${_downloadDir}`)
                             resolve(getSidx(Out))
                         }
                     })
@@ -168,7 +200,7 @@ var SidxInterface = (() => {
     }
 
     function _getMimeType(options) {
-        return options.audioonly ? 'audio/mp4' : 'video/mp4';
+        return options.audioOnly ? 'audio/mp4' : 'video/mp4';
     }
 
     //*********************

@@ -7,3 +7,8 @@ The application would be if you wanted to use this with a video mediasource by r
 [dash tutorial](https://msdn.microsoft.com/en-us/library/dn551368(v=vs.85).aspx)
 
 It is promised with bluebird.
+
+Please see the example.js for use.
+
+You will need [youtube-dl](https://github.com/rg3/youtube-dl/blob/master/README.md#readme) because sometimes, especially for copywrited content, youtube does not give the index ranges lightly, so we need to leverage this library to download the manifests.
+
