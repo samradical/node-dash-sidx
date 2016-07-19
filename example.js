@@ -2,7 +2,7 @@ var fs = require('fs');
 var path = require('path');
 var Interface = require('./index');
 
-var ID = 'Z8Vq4vgF8aA';
+var ID = '1aXs8lc-DkY';
 
 /*
 All OPTIONS
@@ -18,6 +18,7 @@ All OPTIONS
 var options = {
     id:ID,
     audioOnly:false,
+    youtubeDl:true
 };
 
 Interface.start(options).then(results => {
