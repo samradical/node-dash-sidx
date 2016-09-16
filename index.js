@@ -22,7 +22,6 @@ var SidxInterface = (() => {
 
   function start(options) {
     options = options || {};
-
     if (options.audioOnly) {
       delete options.resolution;
     }
@@ -35,16 +34,26 @@ var SidxInterface = (() => {
       }
     }
 
-    if (options.audioOnly && options.videoOnly) {
+    /*if (options.audioOnly && options.videoOnly) {
       options.videoOnly = true;
       options.audioOnly = false;
+    }*/
+
+    if (typeof options.youtubeDl === 'undefined') {
+      options.youtubeDl = true
     }
 
-    options.audioOnly = options.audioOnly || false;
-    options.videoOnly = !options.audioOnly;
+    if (typeof options.chooseBest === 'undefined') {
+      options.chooseBest = true
+    }
+
+    options.videoOnly = Boolean(options.videoOnly)
+    options.audioOnly = Boolean(options.audioOnly)
+
+    options.audioOnly = options.audioOnly;
+    options.videoOnly = options.videoOnly;
     options.container = options.container || 'mp4'
 
-    options.chooseBest = options.chooseBest || false;
 
     return new Q(function(resolve, reject) {
 
@@ -71,8 +80,7 @@ var SidxInterface = (() => {
 
   function chooseMediaFormat(formats, options) {
     var mimetpye = _getMimeType(options)
-    console.log(mimetpye);
-    //fs.writeFileSync(`d.json`, JSON.stringify(formats, null, 4), 'utf-8')
+      //fs.writeFileSync(`d.json`, JSON.stringify(formats, null, 4), 'utf-8')
       //fs.writeSync('d.json', JSON.stringify(formats, null, 4))
       /*var choices = formats.filter(function(rep) {
           var re = new RegExp(mimetpye);
@@ -98,15 +106,39 @@ var SidxInterface = (() => {
           }
           return valid;
       });*/
-    var choices = formats.filter(function(rep) {
-      var re = new RegExp(mimetpye);
-      return rep.type.match(re)
-    }).filter(choice => {
-      return options.audioOnly === !!choice.audioEncoding
-    })
+    var choices = formats.filter(choice => {
+        return options.container === choice.container
+      }).filter(choice => {
+        //itag eval
+        return parseInt(choice.itag, 10) > 100
+      })
+      .filter(choice => {
+        return options.audioOnly === !!choice.audioEncoding
+      })
+      /*
+          filter(function(rep) {
+            var re = new RegExp(mimetpye);
+            console.log(rep.type);
+            console.log(rep);
+            if(!rep.type){
+              return false
+            }
+            return rep.type.match(re)
+          }).filter(choice => {
+            return options.audioOnly === !!choice.audioEncoding
+          })*/
     var filteredCorrectly = choices.filter(choice => {
       return choice.index
     })
+
+    /*if (options.resolution) {
+      filteredCorrectly = filteredCorrectly.filter(choice => {
+        console.log(choice.resolution, options.resolution);
+        return choice.resolution === options.resolution
+      })
+    }*/
+    console.log(filteredCorrectly);
+
     return new Q(function(resolve, reject) {
       if (filteredCorrectly.length) {
         if (options.chooseBest) {
@@ -114,6 +146,7 @@ var SidxInterface = (() => {
         }
         //resolve(tryYoutubeDl(choices[0], options))
         resolve(Q.map(choices, (choice) => {
+          choice.videoId = options.id
           _prepareData(choice)
           return getSidx(choice);
         }));
@@ -133,6 +166,7 @@ var SidxInterface = (() => {
       codecs: undefined,
       indexRange: undefined,
       url: object.url,
+      videoId: options.id,
       sidx: undefined
     }
     return new Q(function(resolve, reject) {
@@ -193,8 +227,8 @@ var SidxInterface = (() => {
               console.log(Out);
               console.log("===================================");*/
               Out.indexRange = indexRange
+              Out.youtubeDl = true
 
-              console.log(Out);
               sh.cd(__dirname)
                 //sh.exec(`rm -rf ${_downloadDir}`)
               resolve(getSidx(Out))
@@ -254,9 +288,11 @@ var SidxInterface = (() => {
           } else {
             resolve({
               info: choice,
+              youtubeDl: !!choice.youtubeDl,
               codecs: choice.codecs,
               indexRange: choice.indexRange,
               url: choice.url,
+              videoId: choice.videoId,
               sidx: p
             });
           }
