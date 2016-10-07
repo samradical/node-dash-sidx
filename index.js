@@ -4,22 +4,27 @@ var path = require('path');
 var YT = require('ytdl-core');
 var sh = require('shelljs');
 var readDir = require('readdir');
+var _ = require('lodash');
 var xml2js = require('xml2js');
 var XMLHttpRequest = require('xhr2');
 var SIDX = require('./lib/sidx');
 //mp4 and m4a dash codes
 
 //720p, 480p, 360p
-var DASH_VIDEO_RESOLUTIONS = ['720p', '480p', '360p'];
-var DASH_VIDEO_TAGS = ['136', '135', '134', '133'];
+var DASH_VIDEO_RESOLUTIONS = ['720p', '480p', '360p', '240p', '144p'];
+var DASH_VIDEO_TAGS = ['136', '135', '134', '133', '160'];
 var DASH_AUDIO_TAGS = ['139', '140', '141'];
 var VIDEO_PATH = '/watch?v=';
 var VIDEO_BASE = 'https://www.youtube.com' + VIDEO_PATH;
-
+var ITAG_DASH_TRESHOLD = 100
 
 var SidxInterface = (() => {
-  var parser = new xml2js.Parser();
 
+  var parser = new xml2js.Parser();
+  var _tempSaveDir = __dirname
+    /*
+    API
+    */
   function start(options) {
     options = options || {};
     if (options.audioOnly) {
@@ -55,7 +60,7 @@ var SidxInterface = (() => {
     options.container = options.container || 'mp4'
 
 
-    return new Q(function(resolve, reject) {
+    return new Q((resolve, reject) => {
 
       var id = options.id;
       if (!id) {
@@ -63,20 +68,67 @@ var SidxInterface = (() => {
         return;
       }
       var url = VIDEO_BASE + id;
+      console.log(`Requesting info for ${url}`);
       YT.getInfo(url, function(err, info) {
         if (!info) {
-          reject('failed to get info on', id);
-          return;
+          reject(`failed to get info on ${id}`);
+        } else {
+          console.log(`Got info for ${id}`);
+          chooseMediaFormat(info.formats, options)
+            .then(function(data) {
+              resolve(data);
+            }).catch(function(err) {
+              reject(err);
+            });
         }
-        chooseMediaFormat(info.formats, options)
-          .then(function(data) {
-            resolve(data);
-          }).catch(function(err) {
-            reject();
-          });
       });
     });
   }
+
+  function getURL(videoId, itag) {
+    return new Q((resolve, reject) => {
+
+      var _cmd = `youtube-dl ${VIDEO_BASE}${videoId} --skip-download -f ${itag} -g -q`
+      var run = sh.exec(_cmd, (code, stdout, stderr) => {
+        if (code !== 0) {
+          err = new Error('Command failed ' + _cmd);
+          reject(err)
+        } else {
+          resolve(stdout)
+        }
+      });
+      return
+
+      if (run.code !== 0) {
+        err = new Error('Command failed ' + _cmd);
+      }
+
+      var url = VIDEO_BASE + videoId;
+      YT.getInfo(url, (err, info) => {
+        if (!info) {
+          reject(`failed to get info on ${videoId}`);
+          return;
+        }
+
+        let _url = _.compact(info.formats.map(format => {
+          if (format.itag === itag) {
+            return format.url
+          }
+          return null
+        }))[0]
+        resolve(_url)
+      });
+    });
+  }
+
+  function setTempSaveDir(dir) {
+    _tempSaveDir = dir
+  }
+
+  //******************
+  //PRIVATE
+  //******************
+
 
   function chooseMediaFormat(formats, options) {
     var mimetpye = _getMimeType(options)
@@ -106,11 +158,13 @@ var SidxInterface = (() => {
           }
           return valid;
       });*/
+
+
     var choices = formats.filter(choice => {
         return options.container === choice.container
       }).filter(choice => {
-        //itag eval
-        return parseInt(choice.itag, 10) > 100
+        //itag eval, remove the non dashed ones
+        return parseInt(choice.itag, 10) > ITAG_DASH_TRESHOLD
       })
       .filter(choice => {
         return options.audioOnly === !!choice.audioEncoding
@@ -127,30 +181,59 @@ var SidxInterface = (() => {
           }).filter(choice => {
             return options.audioOnly === !!choice.audioEncoding
           })*/
+
+
+    //ones that have an index range
     var filteredCorrectly = choices.filter(choice => {
       return choice.index
     })
 
-    /*if (options.resolution) {
-      filteredCorrectly = filteredCorrectly.filter(choice => {
-        console.log(choice.resolution, options.resolution);
-        return choice.resolution === options.resolution
-      })
-    }*/
-    console.log(filteredCorrectly);
+    if (options.resolution) {
 
-    return new Q(function(resolve, reject) {
-      if (filteredCorrectly.length) {
-        if (options.chooseBest) {
-          choices = choices.splice(0, 1);
+      let _r = [...DASH_VIDEO_RESOLUTIONS]
+      let _resolutionSelection = _r.slice(DASH_VIDEO_RESOLUTIONS.indexOf(options.resolution))
+
+      filteredCorrectly = _.compact(_.flatten(_resolutionSelection.map(resolution => {
+        return [...filteredCorrectly].map(item => {
+          if (item.resolution === resolution) {
+            return item
+          } else {
+            null
+          }
+        })
+      })))
+
+      /*
+      Filter and make lowest at top
+      */
+      if (!filteredCorrectly.length) {
+        filteredCorrectly = choices.filter(choice => {
+          return choice.index
+        }).reverse()
+        if (!options.chooseBest) {
+          filteredCorrectly.reverse()
         }
-        //resolve(tryYoutubeDl(choices[0], options))
-        resolve(Q.map(choices, (choice) => {
-          choice.videoId = options.id
-          _prepareData(choice)
-          return getSidx(choice);
-        }));
+      }
+    }
+
+    return new Q((resolve, reject) => {
+      console.log(filteredCorrectly);
+      if (filteredCorrectly.length) {
+        console.log(`Got a match with an index range for ${options.id}`);
+        //pick top, length 1
+        let _choice = filteredCorrectly.splice(0, 1)[0];
+        _choice.videoId = options.id
+        _prepareData(_choice)
+        resolve(getSidx(_choice))
+          /*resolve(Q.map(_choices, (choice) => {
+              _prepareData(choice)
+              return getSidx(choice);
+          })[0]);*/
       } else if (options.youtubeDl) {
+        console.log(`Trying youtubeDl for ${options.id}`);
+        if (!options.chooseBest) {
+          choices.reverse()
+        }
         resolve(tryYoutubeDl(choices[0], options))
       } else {
         resolve()
@@ -169,13 +252,15 @@ var SidxInterface = (() => {
       videoId: options.id,
       sidx: undefined
     }
+    console.log(Out);
     return new Q(function(resolve, reject) {
-      var _downloadDir = path.join(__dirname, id)
+      var _downloadDir = path.join(_tempSaveDir, id)
       var mimetpye = _getMimeType(options)
       if (fs.existsSync(_downloadDir)) {
         sh.exec(`rm -rf ${_downloadDir}`)
       }
       fs.mkdirSync(_downloadDir)
+      fs.chmodSync(_downloadDir, '0777')
       sh.cd(_downloadDir)
       var _cmd = `youtube-dl ${videoUrl} --skip-download -v --write-pages`
       var run = sh.exec(_cmd);
@@ -213,6 +298,8 @@ var SidxInterface = (() => {
               delete Out.info
               Out.url = rep.BaseURL[0]
               Out.codecs = repVars.codecs
+              Out.resolution = `${repVars.height}p`
+              Out.itag = DASH_VIDEO_TAGS[DASH_VIDEO_RESOLUTIONS.indexOf(Out.resolution)]
               var segmentList = rep.SegmentList || rep.SegmentBase
               var indexRange
               if (segmentList[0].$) {
@@ -223,13 +310,10 @@ var SidxInterface = (() => {
                 var _iParsed = parseInt(_i, 10) - 1
                 indexRange = `0-${_iParsed}`
               }
-              /*console.log("===================================");
-              console.log(Out);
-              console.log("===================================");*/
               Out.indexRange = indexRange
               Out.youtubeDl = true
-
-              sh.cd(__dirname)
+              console.log(Out);
+              sh.cd(_tempSaveDir)
                 //sh.exec(`rm -rf ${_downloadDir}`)
               resolve(getSidx(Out))
             }
@@ -279,13 +363,15 @@ var SidxInterface = (() => {
       xhr.open('GET', choice.url);
       xhr.setRequestHeader("Range", "bytes=" + choice.indexRange);
       xhr.responseType = 'arraybuffer';
-      xhr.addEventListener("readystatechange", function() {
+      xhr.addEventListener("readystatechange", () => {
         if (xhr.readyState == xhr.DONE) { // wait for video to load
           // Add response to buffer
+          xhr.removeEventListener("readystatechange", arguments.callee)
           var p = SIDX.parseSidx(xhr.response);
           if (!p) {
-            reject('Failed on SIDX parse');
+            reject(`Failed on SIDX parse for ${choice.videoId}`);
           } else {
+            console.log(`Parsed SIDX for ${choice.videoId}`);
             resolve({
               info: choice,
               youtubeDl: !!choice.youtubeDl,
@@ -302,7 +388,11 @@ var SidxInterface = (() => {
     });
   }
   return {
-    start: start
+    start: start,
+    getURL: getURL,
+    setTempSaveDir: setTempSaveDir
   }
+
 })();
+
 module.exports = SidxInterface;

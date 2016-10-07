@@ -12,6 +12,7 @@
   "main": "index.js",
   "dependencies": {
     "bluebird": "^3.2.1",
+    "lodash": "^4.16.3",
     "readdir": "0.0.13",
     "shelljs": "^0.7.0",
     "xhr2": "0.1.3",
