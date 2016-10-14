@@ -18,6 +18,12 @@ var VIDEO_PATH = '/watch?v=';
 var VIDEO_BASE = 'https://www.youtube.com' + VIDEO_PATH;
 var ITAG_DASH_TRESHOLD = 100
 
+
+/*
+probably could scrap ytdl core and just use the itags with youtube-dl
+
+*/
+
 var SidxInterface = (() => {
 
   var parser = new xml2js.Parser();
@@ -62,7 +68,7 @@ var SidxInterface = (() => {
 
     return new Q((resolve, reject) => {
 
-      var id = options.id;
+      var id = options.id || options.videoId;
       if (!id) {
         reject('specify id in args: --id ');
         return;
@@ -89,6 +95,7 @@ var SidxInterface = (() => {
     return new Q((resolve, reject) => {
 
       var _cmd = `youtube-dl ${VIDEO_BASE}${videoId} --skip-download -f ${itag} -g -q`
+      console.log(_cmd);
       var run = sh.exec(_cmd, (code, stdout, stderr) => {
         if (code !== 0) {
           err = new Error('Command failed ' + _cmd);
@@ -97,6 +104,7 @@ var SidxInterface = (() => {
           resolve(stdout)
         }
       });
+
       return
 
       if (run.code !== 0) {
@@ -294,12 +302,13 @@ var SidxInterface = (() => {
 
           _reps.forEach(rep => {
             var repVars = rep.$
+            console.log(repVars);
             if (iTags.indexOf(repVars.id) > -1 && !Out.codecs) {
               delete Out.info
               Out.url = rep.BaseURL[0]
               Out.codecs = repVars.codecs
               Out.resolution = `${repVars.height}p`
-              Out.itag = DASH_VIDEO_TAGS[DASH_VIDEO_RESOLUTIONS.indexOf(Out.resolution)]
+              Out.itag = _sniffItagFrom(Out.url)//DASH_VIDEO_TAGS[DASH_VIDEO_RESOLUTIONS.indexOf(Out.resolution)]
               var segmentList = rep.SegmentList || rep.SegmentBase
               var indexRange
               if (segmentList[0].$) {
@@ -321,6 +330,12 @@ var SidxInterface = (() => {
         });
       })
     });
+  }
+
+  function _sniffItagFrom(dumpUrl){
+    let itag = dumpUrl.split('itag/')[1].substring(0, 3)
+    console.log(itag);
+    return itag
   }
 
   function _getMimeType(options) {
