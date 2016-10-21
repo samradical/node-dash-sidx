@@ -1,12 +1,17 @@
 var Q = require('bluebird');
+const exec = require('child_process').exec
 var fs = require('fs');
+var rimraf = require('rimraf');
 var path = require('path');
 var YT = require('ytdl-core');
-var sh = require('shelljs');
 var readDir = require('readdir');
 var _ = require('lodash');
 var xml2js = require('xml2js');
 var XMLHttpRequest = require('xhr2');
+var fetch = require('node-fetch');
+var toArray = require('stream-to-array');
+var xhr = require('xhr-request');
+var bufferToArrayBuffer = require('buffer-to-arraybuffer');
 var SIDX = require('./lib/sidx');
 //mp4 and m4a dash codes
 
@@ -92,22 +97,19 @@ var SidxInterface = (() => {
   }
 
   function getURL(videoId, itag) {
-    console.log('getURL');
+    console.log(`getURL ${videoId} ${itag}`);
     return new Q((resolve, reject) => {
 
-      /*var _cmd = `youtube-dl ${VIDEO_BASE}${videoId} --skip-download -f ${itag} -g -q`
-      console.log(_cmd);
-      var run = sh.exec(_cmd, (code, stdout, stderr) => {
-        if (code !== 0) {
-          err = new Error('Command failed ' + _cmd);
-          reject(err)
+      var _cmd = `youtube-dl ${VIDEO_BASE}${videoId} --skip-download -f ${itag} -g -q`
+      var run = exec(_cmd, (code, stdout, stderr) => {
+        if (stderr) {
+          reject(stderr)
         } else {
           resolve(stdout)
         }
       });
 
       return
-*/
       var url = VIDEO_BASE + videoId;
       YT.getInfo(url, (err, info) => {
         if (!info) {
@@ -121,6 +123,7 @@ var SidxInterface = (() => {
           }
           return null
         }))[0]
+        console.log(_url);
         resolve(_url)
       });
     });
@@ -257,79 +260,82 @@ var SidxInterface = (() => {
       videoId: options.id,
       sidx: undefined
     }
-    console.log(Out);
-    return new Q(function(resolve, reject) {
-      var _downloadDir = path.join(_tempSaveDir, id)
+    return new Q((resolve, reject) => {
       var mimetpye = _getMimeType(options)
-      if (fs.existsSync(_downloadDir)) {
-        sh.exec(`rm -rf ${_downloadDir}`)
-      }
-      fs.mkdirSync(_downloadDir)
-      fs.chmodSync(_downloadDir, '0777')
-      sh.cd(_downloadDir)
-      var _cmd = `youtube-dl ${videoUrl} --skip-download -v --write-pages`
-      var run = sh.exec(_cmd);
-      if (run.code !== 0) {
-        err = new Error('Command failed ' + _cmd);
-      }
-      var filesArray = readDir.readSync(_downloadDir, ['**.dump'], readDir.ABSOLUTE_PATHS);
-      var manifests = filesArray.filter(function(p) {
-        return p.indexOf('manifest') > -1
-      })
-      var iTags = options.videoOnly ? DASH_VIDEO_TAGS : DASH_AUDIO_TAGS
-      manifests.forEach(function(p) {
-        var xml = fs.readFileSync(p, 'utf-8')
-        parser.parseString(xml, function(err, result) {
-          var adpatation = result.MPD.Period[0].AdaptationSet;
-          var byMime = adpatation.filter(set => {
-            return set.$.mimeType === mimetpye
-          })[0]
+      var _c = `youtube-dl ${videoUrl} --skip-download -v --write-pages`
+      console.log(_c);
+      let _cmd = exec(_c)
+      _cmd.on('exit', (code) => {
+        console.log(code);
+        var filesArray = readDir.readSync(process.cwd(), ['**.dump'], readDir.ABSOLUTE_PATHS);
+        console.log(filesArray);
+        var manifests = filesArray.filter(function(p) {
+          return p.indexOf('manifest') > -1
+        })
+        var iTags = options.videoOnly ? DASH_VIDEO_TAGS : DASH_AUDIO_TAGS
+        console.log(iTags);
+        console.log('\n');
+        manifests.forEach(function(p) {
+            fs.readFile(p, 'utf-8', (err, data) => {
+              parser.parseString(data, (err, result) => {
+                var adpatation = result.MPD.Period[0].AdaptationSet;
+                var byMime = adpatation.filter(set => {
+                  return set.$.mimeType === mimetpye
+                })[0]
 
-          let _reps = byMime.Representation.filter(rep => {
-            var _r = false
-            var repVars = rep.$
-            if (iTags.indexOf(repVars.id) > -1) {
-              var segmentList = rep.SegmentList
-              if (segmentList[0].SegmentURL[0].$.media.indexOf('range') > -1) {
-                _r = true
-              }
-            }
-            return _r
-          })
+                let _reps = byMime.Representation.filter(rep => {
+                  var _r = false
+                  var repVars = rep.$
+                  if (iTags.indexOf(repVars.id) > -1) {
+                    var segmentList = rep.SegmentList
+                    if (segmentList[0].SegmentURL[0].$.media.indexOf('range') > -1) {
+                      _r = true
+                    }
+                  }
+                  return _r
+                })
 
-          _reps.forEach(rep => {
-            var repVars = rep.$
-            console.log(repVars);
-            if (iTags.indexOf(repVars.id) > -1 && !Out.codecs) {
-              delete Out.info
-              Out.url = rep.BaseURL[0]
-              Out.codecs = repVars.codecs
-              Out.resolution = `${repVars.height}p`
-              Out.itag = _sniffItagFrom(Out.url)//DASH_VIDEO_TAGS[DASH_VIDEO_RESOLUTIONS.indexOf(Out.resolution)]
-              var segmentList = rep.SegmentList || rep.SegmentBase
-              var indexRange
-              if (segmentList[0].$) {
-                let _ii = segmentList[0].$.indexRange.split('-')[1]
-                indexRange = `0-${_ii}`
-              } else {
-                var _i = segmentList[0].SegmentURL[0].$.media.replace('range/', '').split('-')[0]
-                var _iParsed = parseInt(_i, 10) - 1
-                indexRange = `0-${_iParsed}`
-              }
-              Out.indexRange = indexRange
-              Out.youtubeDl = true
-              console.log(Out);
-              sh.cd(_tempSaveDir)
-                //sh.exec(`rm -rf ${_downloadDir}`)
-              resolve(getSidx(Out))
-            }
+                _reps.forEach(rep => {
+                  var repVars = rep.$
+                  if (iTags.indexOf(repVars.id) > -1 && !Out.codecs) {
+                    delete Out.info
+                    Out.url = rep.BaseURL[0]
+                    Out.codecs = repVars.codecs
+                    Out.resolution = `${repVars.height}p`
+                    Out.itag = _sniffItagFrom(Out.url) //DASH_VIDEO_TAGS[DASH_VIDEO_RESOLUTIONS.indexOf(Out.resolution)]
+                    var segmentList = rep.SegmentList || rep.SegmentBase
+                    var indexRange
+                    if (segmentList[0].$) {
+                      let _ii = segmentList[0].$.indexRange.split('-')[1]
+                      indexRange = `0-${_ii}`
+                    } else {
+                      var _i = segmentList[0].SegmentURL[0].$.media.replace('range/', '').split('-')[0]
+                      var _iParsed = parseInt(_i, 10) - 1
+                      indexRange = `0-${_iParsed}`
+                    }
+                    Out.indexRange = indexRange
+                    Out.youtubeDl = true
+                    console.log(Out);
+                    console.log(rep);
+                    filesArray.forEach(manifest => {
+                      fs.unlinkSync(manifest)
+                    })
+                    resolve(getSidx(Out))
+                  }
+                })
+              });
+            })
           })
-        });
-      })
+          //}
+      });
     });
   }
 
-  function _sniffItagFrom(dumpUrl){
+  function _runYoutubeDlCommand() {
+
+  }
+
+  function _sniffItagFrom(dumpUrl) {
     let itag = dumpUrl.split('itag/')[1].substring(0, 3)
     console.log(itag);
     return itag
@@ -371,7 +377,70 @@ var SidxInterface = (() => {
   */
   function getSidx(choice) {
     return new Q(function(resolve, reject) {
-      var xhr = new XMLHttpRequest();
+      console.log(choice.indexRange);
+
+      xhr(choice.url, {
+          method: 'GET',
+          responseType: 'arraybuffer',
+          headers: { 'Range': `bytes=${choice.indexRange}` },
+        }, function(err, data) {
+          if (err) {
+            reject(err)
+          }
+          var p = SIDX.parseSidx(data);
+          console.log(p);
+          if (!p) {
+            reject(`Failed on SIDX parse for ${choice.videoId}`);
+          } else {
+            console.log(`Parsed SIDX for ${choice.videoId}`);
+            resolve({
+              info: choice,
+              youtubeDl: !!choice.youtubeDl,
+              codecs: choice.codecs,
+              indexRange: choice.indexRange,
+              url: choice.url,
+              videoId: choice.videoId,
+              sidx: p
+            });
+          }
+        })
+        /*
+
+              fetch(choice.url, {
+                  method: 'GET',
+                  headers: { 'Range': `bytes=${choice.indexRange}` },
+                })
+                .then(function(res) {
+                  var ab = bufferToArrayBuffer(toArray(res.body)
+                    .then(function(parts) {
+                      console.log(parts);
+                      var buffers = []
+                      for (var i = 0, l = parts.length; i < l; ++i) {
+                        var part = parts[i]
+                        buffers.push((part instanceof Buffer) ? part : new Buffer(part))
+                      }
+                      return Buffer.concat(buffers)
+                    }))
+                  console.log(ab);
+                  var p = SIDX.parseSidx(ab);
+                  console.log(p);
+                  if (!p) {
+                    reject(`Failed on SIDX parse for ${choice.videoId}`);
+                  } else {
+                    console.log(`Parsed SIDX for ${choice.videoId}`);
+                    resolve({
+                      info: choice,
+                      youtubeDl: !!choice.youtubeDl,
+                      codecs: choice.codecs,
+                      indexRange: choice.indexRange,
+                      url: choice.url,
+                      videoId: choice.videoId,
+                      sidx: p
+                    });
+                  }
+                })*/
+
+      /*var xhr = new XMLHttpRequest();
       xhr.open('GET', choice.url);
       xhr.setRequestHeader("Range", "bytes=" + choice.indexRange);
       xhr.responseType = 'arraybuffer';
@@ -380,6 +449,7 @@ var SidxInterface = (() => {
           // Add response to buffer
           xhr.removeEventListener("readystatechange", arguments.callee)
           var p = SIDX.parseSidx(xhr.response);
+          console.log(p);
           if (!p) {
             reject(`Failed on SIDX parse for ${choice.videoId}`);
           } else {
@@ -396,7 +466,7 @@ var SidxInterface = (() => {
           }
         }
       }, false);
-      xhr.send();
+      xhr.send();*/
     });
   }
   return {
