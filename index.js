@@ -92,9 +92,10 @@ var SidxInterface = (() => {
   }
 
   function getURL(videoId, itag) {
+    console.log('getURL');
     return new Q((resolve, reject) => {
 
-      var _cmd = `youtube-dl ${VIDEO_BASE}${videoId} --skip-download -f ${itag} -g -q`
+      /*var _cmd = `youtube-dl ${VIDEO_BASE}${videoId} --skip-download -f ${itag} -g -q`
       console.log(_cmd);
       var run = sh.exec(_cmd, (code, stdout, stderr) => {
         if (code !== 0) {
@@ -106,11 +107,7 @@ var SidxInterface = (() => {
       });
 
       return
-
-      if (run.code !== 0) {
-        err = new Error('Command failed ' + _cmd);
-      }
-
+*/
       var url = VIDEO_BASE + videoId;
       YT.getInfo(url, (err, info) => {
         if (!info) {
