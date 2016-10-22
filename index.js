@@ -7,11 +7,7 @@ var YT = require('ytdl-core');
 var readDir = require('readdir');
 var _ = require('lodash');
 var xml2js = require('xml2js');
-var XMLHttpRequest = require('xhr2');
-var fetch = require('node-fetch');
-var toArray = require('stream-to-array');
 var xhr = require('xhr-request');
-var bufferToArrayBuffer = require('buffer-to-arraybuffer');
 var SIDX = require('./lib/sidx');
 //mp4 and m4a dash codes
 
