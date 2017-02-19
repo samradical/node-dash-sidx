@@ -1,8 +1,8 @@
 var fs = require('fs');
 var path = require('path');
-var Interface = require('./index');
+var Interface = require('./index.new');
 
-var ID = '9seJ_v6Za0w';
+var ID = 'jbGTggv8IEI';
 
 /*
 All OPTIONS
@@ -17,10 +17,14 @@ All OPTIONS
 
 var options = {
     id:ID,
-    container:'mp4',
-    youtubeDl:false
+    itags:['140']
 };
 
-Interface.start(options).then(results => {
-    fs.writeFileSync(path.join(process.cwd(), `${ID}.json`), JSON.stringify(results, null, 4), 'utf-8');
-});
+Interface.start(options)
+.then(results => {
+    console.log(results);
+    //fs.writeFileSync(path.join(process.cwd(), `${ID}.json`), JSON.stringify(results, null, 4), 'utf-8');
+})
+.catch(err=>{
+    console.log(err);
+})

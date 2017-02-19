@@ -4,19 +4,24 @@
   "homepage": "https://github.com/samelie/node-youtube-dash-sidx/",
   "author": "Sam Elie <samradelie@gmail.com>",
   "version": "0.5.0",
+  "scripts":{
+    "update":"curl -L https://yt-dl.org/downloads/latest/youtube-dl -o bin && chmod a+rx bin/youtube-dl"
+  },
   "repository": {
     "type": "git",
     "url": "https://github.com/samelie/node-youtube-dash-sidx.git",
     "web": "https://github.com/samelie/node-youtube-dash-sidx/"
   },
-  "main": "index.js",
+  "main": "index.new.js",
   "dependencies": {
     "bluebird": "^3.2.1",
-    "lodash": "^4.16.3",
+    "check-types": "^7.1.5",
+    "lodash": "^4.17.4",
+    "query-string": "^4.3.1",
     "readdir": "0.0.13",
     "xhr-request": "^1.0.1",
     "xml2js": "0.4.13",
-    "ytdl-core": "^0.7.9"
+    "ytdl-core": "^0.7.24"
   },
   "keywords": [
     "youtube",

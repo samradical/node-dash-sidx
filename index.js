@@ -28,7 +28,6 @@ probably could scrap ytdl core and just use the itags with youtube-dl
 
 var SidxInterface = (() => {
 
-  var parser = new xml2js.Parser();
   var youtubeDlPath = 'youtube-dl'
   var _tempSaveDir = __dirname
     /*
@@ -40,7 +39,7 @@ var SidxInterface = (() => {
       delete options.resolution;
     }
 
-    if(options.youtubeDlPath){
+    if (options.youtubeDlPath) {
       youtubeDlPath = options.youtubeDlPath
     }
 
@@ -63,6 +62,10 @@ var SidxInterface = (() => {
 
     if (typeof options.chooseBest === 'undefined') {
       options.chooseBest = true
+    }
+
+    if (typeof options.videoOnly === 'undefined') {
+      options.videoOnly = true
     }
 
     options.videoOnly = Boolean(options.videoOnly)
@@ -276,20 +279,30 @@ var SidxInterface = (() => {
       _cmd.on('exit', (code) => {
         console.log(code);
         var filesArray = readDir.readSync(process.cwd(), ['**.dump'], readDir.ABSOLUTE_PATHS);
-        console.log(filesArray);
-        var manifests = filesArray.filter(function(p) {
-          return p.indexOf('manifest') > -1
+        var firstFile = [filesArray.shift()]
+        filesArray.forEach(manifest => {
+          try {
+            fs.unlinkSync(manifest)
+          } catch (e) {
+
+          }
         })
-        var iTags = options.videoOnly ? DASH_VIDEO_TAGS : DASH_AUDIO_TAGS
+        var parser = new xml2js.Parser();
+        var videoiTags = options.videoOnly ? DASH_VIDEO_TAGS : []
+        var audioiTags = options.audioOnly ? DASH_AUDIO_TAGS : []
+        iTags = [...videoiTags, ...audioiTags ]
         console.log(iTags);
         console.log('\n');
-        manifests.forEach(function(p) {
+        firstFile.forEach(function(p) {
+
             fs.readFile(p, 'utf-8', (err, data) => {
               parser.parseString(data, (err, result) => {
                 var adpatation = result.MPD.Period[0].AdaptationSet;
                 var byMime = adpatation.filter(set => {
                   return set.$.mimeType === mimetpye
                 })[0]
+
+                fs.unlinkSync(p)
 
                 let _reps = byMime.Representation.filter(rep => {
                   var _r = false
@@ -303,37 +316,60 @@ var SidxInterface = (() => {
                   return _r
                 })
 
-                _reps.forEach(rep => {
-                  var repVars = rep.$
-                  if (iTags.indexOf(repVars.id) > -1 && !Out.codecs) {
-                    delete Out.info
-                    Out.url = rep.BaseURL[0]
-                    Out.codecs = repVars.codecs
-                    Out.resolution = `${repVars.height}p`
-                    Out.itag = _sniffItagFrom(Out.url) //DASH_VIDEO_TAGS[DASH_VIDEO_RESOLUTIONS.indexOf(Out.resolution)]
-                    var segmentList = rep.SegmentList || rep.SegmentBase
-                    var indexRange
-                    if (segmentList[0].$) {
-                      let _ii = segmentList[0].$.indexRange.split('-')[1]
-                      indexRange = `0-${_ii}`
-                    } else {
-                      var _i = segmentList[0].SegmentURL[0].$.media.replace('range/', '').split('-')[0]
-                      var _iParsed = parseInt(_i, 10) - 1
-                      indexRange = `0-${_iParsed}`
-                    }
-                    Out.indexRange = indexRange
-                    Out.youtubeDl = true
-                    console.log(Out);
-                    filesArray.forEach(manifest => {
-                      try {
-                        fs.unlinkSync(manifest)
-                      } catch (e) {
+                if (options.all) {
+                  resolve(
 
+                    Q.map(_reps, rep => {
+
+                      let _o = _.assign({}, Out)
+                      var repVars = rep.$
+                      _o.url = rep.BaseURL[0]
+                      _o.codecs = repVars.codecs
+                      _o.resolution = `${repVars.height}p`
+                      _o.itag = _sniffItagFrom(_o.url) //DASH_VIDEO_TAGS[DASH_VIDEO_RESOLUTIONS.indexOf(_o.resolution)]
+                      var segmentList = rep.SegmentList || rep.SegmentBase
+                      var indexRange
+                      if (segmentList[0].$) {
+                        let _ii = segmentList[0].$.indexRange.split('-')[1]
+                        indexRange = `0-${_ii}`
+                      } else {
+                        var _i = segmentList[0].SegmentURL[0].$.media.replace('range/', '').split('-')[0]
+                        var _iParsed = parseInt(_i, 10) - 1
+                        indexRange = `0-${_iParsed}`
                       }
+                      _o.indexRange = indexRange
+                      _o.youtubeDl = true
+                      return getSidx(_o)
+
                     })
-                    resolve(getSidx(Out))
-                  }
-                })
+
+                  )
+                } else {
+                  _reps.forEach(rep => {
+                    var repVars = rep.$
+                    if (iTags.indexOf(repVars.id) > -1 && !Out.codecs) {
+                      delete Out.info
+                      Out.url = rep.BaseURL[0]
+                      Out.codecs = repVars.codecs
+                      Out.resolution = `${repVars.height}p`
+                      Out.itag = _sniffItagFrom(Out.url) //DASH_VIDEO_TAGS[DASH_VIDEO_RESOLUTIONS.indexOf(Out.resolution)]
+                      var segmentList = rep.SegmentList || rep.SegmentBase
+                      var indexRange
+                      if (segmentList[0].$) {
+                        let _ii = segmentList[0].$.indexRange.split('-')[1]
+                        indexRange = `0-${_ii}`
+                      } else {
+                        var _i = segmentList[0].SegmentURL[0].$.media.replace('range/', '').split('-')[0]
+                        var _iParsed = parseInt(_i, 10) - 1
+                        indexRange = `0-${_iParsed}`
+                      }
+                      Out.indexRange = indexRange
+                      Out.youtubeDl = true
+                      resolve(getSidx(Out))
+                    }
+                  })
+                }
+
               });
             })
           })
@@ -426,7 +462,7 @@ var SidxInterface = (() => {
     });
   }
 
-  function setYoutubeDLPath(p){
+  function setYoutubeDLPath(p) {
     youtubeDlPath = p
   }
 
