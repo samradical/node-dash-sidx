@@ -2,8 +2,8 @@
   "name": "node-youtube-dash-sidx",
   "description": "Retreive the sidx of a youtube video from the id.",
   "homepage": "https://github.com/samradical/node-youtube-dash-sidx/",
-  "author": "Sam Elie <samradelie@gmail.com>",
-  "version": "0.5.0",
+  "author": "Sam Elie <sam@add.dog>",
+  "version": "0.1.0",
   "scripts": {
     "update": "curl -L https://yt-dl.org/downloads/latest/youtube-dl -o bin && chmod a+rx bin/youtube-dl"
   },
@@ -24,10 +24,6 @@
     "ytdl-core": "^0.7.24"
   },
   "keywords": [
-    "youtube",
-    "dash",
-    "sidx",
-    "mpd"
   ],
   "bugs": {
     "url": "https://github.com/samradical/node-youtube-dash-sidx/issues"

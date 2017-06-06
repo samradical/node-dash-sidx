@@ -1,19 +1,8 @@
 var fs = require('fs');
 var path = require('path');
-var Interface = require('./index.new');
+var Interface = require('./index');
 
 var ID = 'DNWS6QoYR1Q';
-
-/*
-All OPTIONS
-    id:ID,
-    audioOnly:false,
-    videoOnly:true,
-    resolution: //'720p', '480p', '360p'
-    chooseBest:true,
-    youtubeDl:false // to leverage youtube-dl
-*/
-
 
 var options = {
     id:ID,
