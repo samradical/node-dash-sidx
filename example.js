@@ -2,7 +2,7 @@ var fs = require('fs');
 var path = require('path');
 var Interface = require('./index.new');
 
-var ID = 'jbGTggv8IEI';
+var ID = 'DNWS6QoYR1Q';
 
 /*
 All OPTIONS
@@ -26,5 +26,6 @@ Interface.start(options)
     //fs.writeFileSync(path.join(process.cwd(), `${ID}.json`), JSON.stringify(results, null, 4), 'utf-8');
 })
 .catch(err=>{
+    console.log("Error:");
     console.log(err);
 })
