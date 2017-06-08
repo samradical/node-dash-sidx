@@ -3,7 +3,7 @@
   "description": "Retreive the sidx of a youtube video from the id.",
   "homepage": "https://github.com/samradical/node-dash-sidx/",
   "author": "Sam Elie <sam@add.dog>",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "scripts": {
     "update": "curl -L https://yt-dl.org/downloads/latest/youtube-dl -o bin && chmod a+rx bin/youtube-dl"
   },

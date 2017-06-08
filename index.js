@@ -143,8 +143,6 @@ var SidxInterface = (() => {
       if (!desiredTags.length) {
         desiredTags = options.audioiTags ? [...DASH_AUDIO_TAGS] : [...DASH_VIDEO_TAGS]
       }
-      console.log(desiredTags);
-
       console.log(`Looking for ${desiredTags.join(',')} itags`);
 
       var _c = `${youtubeDlPath}  ${VIDEO_BASE}${id} --skip-download -v --write-pages ${loginCommand}`
@@ -155,9 +153,13 @@ var SidxInterface = (() => {
       }
       fs.mkdirSync( id)
 
-      process.chdir(id)*/
-
+      process.chdir(_tempSaveDir)
+    */
       console.log(_c);
+
+      const cwd = process.cwd()
+
+      process.chdir(_tempSaveDir)
 
       let mpdSpawn = spawn(`${youtubeDlPath}`, [`${VIDEO_BASE}${id}`, `--skip-download`, '-v', '--write-pages'].concat(loginCommand.split(" ")))
 
@@ -165,7 +167,7 @@ var SidxInterface = (() => {
       const parseString = Q.promisify(parser.parseString)
       var filesArray = readDir.readSync(process.cwd(), ['**.dump'], readDir.ABSOLUTE_PATHS);
 
-      //process.chdir(cwd)
+      process.chdir(cwd)
 
       var foundItags = []
       console.log(`Got ${filesArray.length} mpds`);
@@ -389,8 +391,10 @@ var SidxInterface = (() => {
       } else {
 
         spawn('chmod', ['a+rx', youtubeDlPath])
-
+        const cwd = process.cwd()
+        process.chdir(_tempSaveDir)
         const child = spawn(`${youtubeDlPath}`, [`${VIDEO_BASE}${videoId}`, `--skip-download`, `-f ${itag}`, '-g', '-q', '-i'])
+        process.chdir(cwd)
 
         if (child.stderr.toString('utf-8').length) {
           console.log(`ERROR on: ${_c}`);
@@ -448,7 +452,7 @@ var SidxInterface = (() => {
       if (fs.existsSync(p)) {
         youtubeDlPath = p
         spawn('chmod', ['a+rx', youtubeDlPath])
-        console.log("youtubeDlPath", youtubeDlPath);
+        console.log("setYoutubeDLPath", youtubeDlPath);
       }
     }
   }
