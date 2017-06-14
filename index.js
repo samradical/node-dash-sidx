@@ -103,12 +103,9 @@ var SidxInterface = (() => {
     if (!!username && !!password) {
       loginCommand = `-u ${username} -p ${password}`
     }
-    var _cmd = `${youtubeDlPath} ${VIDEO_BASE}${id} -F ${loginCommand}`
-
-    console.log(_cmd);
 
     return new Q((yes, no) => {
-      let args = [`${VIDEO_BASE}${id}`, `-F`]
+      let args = [`${VIDEO_BASE}${id}`, '--no-warnings', `-F`]
       if (loginCommand.length) args = args.concat(loginCommand.split(" "));
 
       console.log(args);
@@ -118,7 +115,7 @@ var SidxInterface = (() => {
       const stdout = child.stdout.toString('utf-8');
 
       if (stderr.length) {
-        console.log(`ERROR on: ${_cmd}`);
+        console.log(`ERROR on: ${args}`);
         return no(stderr)
       }
 
