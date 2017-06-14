@@ -145,7 +145,7 @@ var SidxInterface = (() => {
       }
       console.log(`Looking for ${desiredTags.join(',')} itags`);
 
-      var _c = `${youtubeDlPath}  ${VIDEO_BASE}${id} --skip-download -v --write-pages ${loginCommand}`
+      var _c = `${youtubeDlPath}  ${VIDEO_BASE}${id} --skip-download -v --write-pages --no-warnings${loginCommand}`
 
       /*const cwd = process.cwd()
       if(fs.existsSync(id)){
@@ -161,7 +161,7 @@ var SidxInterface = (() => {
 
       process.chdir(_tempSaveDir)
 
-      let mpdSpawn = spawn(`${youtubeDlPath}`, [`${VIDEO_BASE}${id}`, `--skip-download`, '-v', '--write-pages'].concat(loginCommand.split(" ")))
+      let mpdSpawn = spawn(`${youtubeDlPath}`, [`${VIDEO_BASE}${id}`, `--skip-download`, '-v', '--write-pages', '--no-warnings'].concat(loginCommand.split(" ")))
 
       var parser = new xml2js.Parser();
       const parseString = Q.promisify(parser.parseString)
