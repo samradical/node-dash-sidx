@@ -23,7 +23,7 @@ var CODEC_MAPS = {
 };
 
 var DASH_VIDEO_RESOLUTIONS = ['720p', '480p', '360p', '240p', '144p'];
-var DASH_VIDEO_TAGS = ['136', '135', '134', '133', '160'];
+var DASH_VIDEO_TAGS = ['266','264','137', '136', '135', '134', '133', '160'];
 var DASH_AUDIO_TAGS = ['139', '140', '141'];
 var DASH_ITAGS = [...DASH_VIDEO_TAGS, ...DASH_AUDIO_TAGS]
 var VIDEO_PATH = '/watch?v=';
@@ -114,6 +114,8 @@ var SidxInterface = (() => {
       const stderr = child.stderr.toString('utf-8');
       const stdout = child.stdout.toString('utf-8');
 
+      console.log(stdout);
+
       if (stderr.length) {
         console.log(`ERROR on: ${args}`);
         return no(stderr)
@@ -140,6 +142,7 @@ var SidxInterface = (() => {
       if (!desiredTags.length) {
         desiredTags = options.audioiTags ? [...DASH_AUDIO_TAGS] : [...DASH_VIDEO_TAGS]
       }
+
       console.log(`Looking for ${desiredTags.join(',')} itags`);
 
       var _c = `${youtubeDlPath}  ${VIDEO_BASE}${id} --skip-download -v --write-pages --no-warnings${loginCommand}`
@@ -196,7 +199,7 @@ var SidxInterface = (() => {
                           return _r
                         })
                       }))
-
+                      console.log(foundItags);
                       console.log(`Reps: ${_reps.length} foundItags: ${foundItags.length}`);
 
                       if (_reps.length) {
@@ -228,7 +231,6 @@ var SidxInterface = (() => {
                           }
                           _o.indexRange = indexRange
 
-                          console.log(_o);
                           /*REQUIRED*/
                           return getSidx(_o)
                         })

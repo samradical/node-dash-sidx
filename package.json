@@ -3,7 +3,7 @@
   "description": "Retreive the sidx of a youtube video from the id.",
   "homepage": "https://github.com/samradical/node-dash-sidx/",
   "author": "Sam Elie <sam@add.dog>",
-  "version": "0.1.12",
+  "version": "0.1.13",
   "scripts": {
     "update": "curl -L https://yt-dl.org/downloads/latest/youtube-dl -o bin && chmod a+rx bin/youtube-dl"
   },
@@ -14,17 +14,16 @@
   },
   "main": "index.js",
   "dependencies": {
-    "bluebird": "^3.2.1",
+    "bluebird": "^3.5.0",
     "check-types": "^7.1.5",
     "lodash": "^4.17.4",
-    "query-string": "^4.3.1",
+    "query-string": "^4.3.4",
     "readdir": "0.0.13",
     "xhr-request": "^1.0.1",
-    "xml2js": "0.4.13",
-    "ytdl-core": "^0.7.24"
+    "xml2js": "^0.4.17",
+    "ytdl-core": "^0.14.4"
   },
-  "keywords": [
-  ],
+  "keywords": [],
   "bugs": {
     "url": "https://github.com/samradical/node-dash-sidx/issues"
   },
